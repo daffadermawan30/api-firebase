@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "641756264863",
+    "project_id": "project-ondeva",
+    "storage_bucket": "project-ondeva.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641756264863:android:5bdd3893f1b9c19e47e5aa",
+        "android_client_info": {
+          "package_name": "com.example.api_dart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMIUS5_znXntyZwzNnoesdZ6f9JjNd36g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641756264863:android:74e227e9a9d3c3d847e5aa",
+        "android_client_info": {
+          "package_name": "com.ondeva.dva30"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMIUS5_znXntyZwzNnoesdZ6f9JjNd36g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
