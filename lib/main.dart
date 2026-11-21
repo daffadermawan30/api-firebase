@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       title: 'Latihan Firebase',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.blue),
-      home: const Scaffold(body: Center(child: LoginScreen())),
+      home: const LoginScreen(),
     );
   }
 }
