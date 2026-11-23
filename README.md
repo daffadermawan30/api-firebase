@@ -1,17 +1,20 @@
-# api_dart
+# Firebase Authentication (api_dart)
 
-A new Flutter project.
+## Anggota & Pembagian Tugas
+- Nama : Daffa Dermawan
+- NIM : 1124160177
 
-## Getting Started
+Aplikasi Flutter untuk autentikasi login (Email & Password) yang terintegrasi Firebase.
 
-This project is a starting point for a Flutter application.
+## Langkah Integrasi Firebase
+1. **Firebase Console**: Buat project Firebase (`project-ondeva`) dan aktifkan menu **Authentication > Sign-in method > Email/Password**.
+2. **FlutterFire CLI**: Jalankan `flutterfire configure --project=project-ondeva` untuk generate `firebase_options.dart`.
+3. **Dependencies**: Tambahkan `firebase_core` dan `firebase_auth` di `pubspec.yaml`, lalu jalankan `flutter pub get`.
+4. **Inisialisasi**: Panggil `WidgetsFlutterBinding.ensureInitialized()` dan `await Firebase.initializeApp(...)` di `main()`.
+5. **Login Auth**: Gunakan fungsi `FirebaseAuth.instance.signInWithEmailAndPassword()` pada form login.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Cara Menjalankan
+```bash
+flutter pub get
+flutter run
+```
