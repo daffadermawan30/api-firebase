@@ -4,6 +4,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../firebase_options.dart';
+import '../pages/notification_detail_screen.dart';
+
+/// Kunci global Navigator, supaya kita bisa pindah halaman
+/// dari luar widget (misalnya saat notifikasi di-klik).
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// HANDLER BACKGROUND / TERMINATED
 /// - Wajib fungsi top-level (di luar class).
@@ -48,6 +53,12 @@ class NotificationService {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _localNotif.initialize(
       settings: const InitializationSettings(android: androidInit),
+      // Dipanggil saat notifikasi LOKAL (foreground) di-klik
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (response.payload != null) {
+          _openDetail(jsonDecode(response.payload!) as Map<String, dynamic>);
+        }
+      },
     );
     await _localNotif
         .resolvePlatformSpecificImplementation<
@@ -79,6 +90,26 @@ class NotificationService {
 
     // 5. FOREGROUND: pesan masuk saat aplikasi sedang dibuka
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+
+    // 6. BACKGROUND -> klik notifikasi -> aplikasi kembali terbuka
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('[FCM] Dibuka dari BACKGROUND');
+      _openDetail(_messageToMap(message));
+    });
+
+    // 7. TERMINATED -> klik notifikasi -> aplikasi dijalankan dari awal
+    final initialMessage = await _messaging.getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint('[FCM] Dibuka dari kondisi MATI (terminated)');
+      _openDetail(_messageToMap(initialMessage));
+    }
+
+    // 8. (Tambahan) Aplikasi dibuka dari notifikasi LOKAL saat app sudah mati
+    final launchDetails = await _localNotif.getNotificationAppLaunchDetails();
+    final payload = launchDetails?.notificationResponse?.payload;
+    if ((launchDetails?.didNotificationLaunchApp ?? false) && payload != null) {
+      _openDetail(jsonDecode(payload) as Map<String, dynamic>);
+    }
   }
 
   /// Menampilkan notifikasi saat aplikasi di FOREGROUND.
@@ -114,5 +145,23 @@ class NotificationService {
       'body': message.notification?.body ?? '-',
       ...message.data,
     };
+  }
+
+  /// Buka halaman detail notifikasi.
+  static void _openDetail(Map<String, dynamic> data) {
+    void push() {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => NotificationDetailScreen(data: data),
+        ),
+      );
+    }
+
+    // Jika Navigator belum siap (aplikasi baru start), tunggu frame pertama.
+    if (navigatorKey.currentState != null) {
+      push();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => push());
+    }
   }
 }
