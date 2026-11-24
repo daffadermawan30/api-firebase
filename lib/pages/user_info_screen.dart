@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/fcm_token_card.dart';
 
 class UserInfoScreen extends StatefulWidget {
   final User user;
@@ -96,50 +97,56 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           ),
         ],
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildAvatar(),
-              const SizedBox(height: 24),
-              const Text(
-                'Login Berhasil!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'UID: ${_currentUser.uid}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Nama: ${_currentUser.displayName ?? "Belum diatur"}',
-                      ),
-                      const SizedBox(height: 8),
-                      Text('Email: ${_currentUser.email ?? "Tidak ada email"}'),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Email Terverifikasi: ${_currentUser.emailVerified ? "Ya" : "Tidak"}',
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Terakhir Login: ${_currentUser.metadata.lastSignInTime?.toString() ?? "-"}',
-                      ),
-                    ],
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildAvatar(),
+                const SizedBox(height: 24),
+                const Text(
+                  'Login Berhasil!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'UID: ${_currentUser.uid}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Nama: ${_currentUser.displayName ?? "Belum diatur"}',
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Email: ${_currentUser.email ?? "Tidak ada email"}',
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Email Terverifikasi: ${_currentUser.emailVerified ? "Ya" : "Tidak"}',
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Terakhir Login: ${_currentUser.metadata.lastSignInTime?.toString() ?? "-"}',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const FcmTokenCard(),
+              ],
+            ),
           ),
         ),
       ),
