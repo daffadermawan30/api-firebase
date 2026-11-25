@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# FCM Backend (Golang)
+service-account.json
+fcmsender.exe
+fcmsender-linux
+fcmsender-mac
+
