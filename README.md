@@ -47,7 +47,8 @@ api_dart/
 │       └── fcm_token_card.dart
 ├── notification_sender/
 │   └── golang/
-│       └── go.mod
+│       ├── go.mod
+│       └── main.go
 └── .github/
     └── workflows/
         └── build-apk.yml
@@ -81,6 +82,19 @@ flutter pub get
 
 ```bash
 flutter run
+```
+
+### 2. Setup Kredensial Backend Golang (OAuth 2.0)
+
+Backend Golang menggunakan autentikasi **OAuth 2.0 Service Account** (`RS256` JWT) untuk memperoleh *access token* Google secara otomatis dan menyimpannya di cache memori (`sync.Mutex`) hingga 60 detik sebelum kedaluwarsa.
+
+1. Buka **Firebase Console** → pilih project `project-ondeva` → **Project Settings** → **Service accounts** → klik **Generate new private key**.
+2. Simpan file hasil unduhan sebagai `service-account.json` di folder `notification_sender/golang/` *(atau di folder induknya `notification_sender/`)*.
+3. Untuk menguji pembacaan kredensial dan autentikasi OAuth 2.0:
+
+```bash
+cd notification_sender/golang
+go run .
 ```
 
 ## Catatan Keamanan
