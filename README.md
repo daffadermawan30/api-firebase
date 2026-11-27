@@ -30,6 +30,29 @@ Aplikasi Firebase Auth & FCM Notification merupakan aplikasi mobile berbasis Flu
 - Golang 1.22+ (Standard Library)
 - GitHub Actions (Auto-Build Debug APK)
 
+## Arsitektur Sistem
+
+```mermaid
+flowchart LR
+    Admin["Admin Web UI (127.0.0.1:8080)"]
+    Go["Backend Golang (fcmsender)"]
+    OAuth["Google OAuth 2.0"]
+    FCM["FCM HTTP v1 API (project-ondeva)"]
+    App["Flutter App (api_dart)"]
+
+    Admin -->|"POST / (target, title, body, data)"| Go
+    Go -->|"1. Sign JWT RS256"| OAuth
+    OAuth -->|"2. Access Token (Cache)"| Go
+    Go -->|"3. POST messages:send"| FCM
+    FCM -->|"4. Push Notification"| App
+    App -.->|"Salin FCM Token / Topic: kelas"| Admin
+```
+
+### Alur Pengiriman FCM HTTP v1
+
+- **Target:** Mendukung pengiriman ke satu perangkat (`token` dari `FcmTokenCard`) maupun broadcast ke banyak perangkat (`topic`, misalnya `kelas`).
+- **Payload:** Menyusun objek `notification` (`title`, `body`, dan `image` opsional), konfigurasi Android (`priority: "high"`, `channel_id: "high_importance_channel"`), serta data tambahan berformat `key=value` per baris yang ditampilkan pada `NotificationDetailScreen`.
+
 ## Struktur Project
 
 ```text
