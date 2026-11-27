@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -20,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -27,6 +29,7 @@ import (
 const (
 	serviceAccountFile = "service-account.json"
 	fcmScope           = "https://www.googleapis.com/auth/firebase.messaging"
+	channelID          = "high_importance_channel"
 )
 
 // ServiceAccount berisi field penting dari service-account.json
@@ -130,6 +133,71 @@ func getAccessToken(sa *ServiceAccount) (string, error) {
 	return cachedToken, nil
 }
 
+// parseData mengubah teks "key=value" per baris menjadi map (nilai string).
+func parseData(text string) map[string]string {
+	data := map[string]string{}
+	for _, line := range strings.Split(text, "\n") {
+		k, v, found := strings.Cut(line, "=")
+		if found && strings.TrimSpace(k) != "" {
+			data[strings.TrimSpace(k)] = strings.TrimSpace(v)
+		}
+	}
+	return data
+}
+
+type Form struct {
+	TargetType, Target, Title, Body, Image, Data string
+}
+
+type Result struct {
+	Status            int
+	Payload, Response string
+}
+
+// sendNotification - LANGKAH 2: kirim pesan ke FCM HTTP v1.
+func sendNotification(f Form) (*Result, error) {
+	sa, err := loadServiceAccount()
+	if err != nil {
+		return nil, err
+	}
+	accessToken, err := getAccessToken(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	notification := map[string]string{"title": f.Title, "body": f.Body}
+	if img := strings.TrimSpace(f.Image); img != "" {
+		notification["image"] = img
+	}
+	message := map[string]any{
+		f.TargetType:   strings.TrimSpace(f.Target), // "token" atau "topic"
+		"notification": notification,
+		"android": map[string]any{
+			"priority":     "high",
+			"notification": map[string]string{"channel_id": channelID},
+		},
+	}
+	if data := parseData(f.Data); len(data) > 0 {
+		message["data"] = data
+	}
+	payload, _ := json.MarshalIndent(map[string]any{"message": message}, "", "  ")
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"https://fcm.googleapis.com/v1/projects/"+sa.ProjectID+"/messages:send",
+		bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return &Result{Status: resp.StatusCode, Payload: string(payload), Response: string(body)}, nil
+}
+
 func main() {
 	sa, err := loadServiceAccount()
 	if err != nil {
@@ -138,5 +206,5 @@ func main() {
 	if _, err := getAccessToken(sa); err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Autentikasi OAuth 2.0 berhasil untuk project %s", sa.ProjectID)
+	log.Printf("Autentikasi OAuth 2.0 & pengirim FCM v1 siap untuk project %s", sa.ProjectID)
 }
