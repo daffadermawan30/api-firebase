@@ -1,6 +1,6 @@
-# Aplikasi Firebase Auth & FCM Notification (`api_dart`)
+# Aplikasi Firebase Auth & FCM Notification
 
-Aplikasi Firebase Auth & FCM Notification merupakan aplikasi mobile berbasis Flutter yang terintegrasi dengan Firebase Authentication dan Firebase Cloud Messaging (HTTP v1) untuk mata kuliah Pemrograman Mobile.
+Aplikasi mobile berbasis Flutter yang menggunakan Firebase Authentication untuk login dan Firebase Cloud Messaging (FCM) untuk push notification, dilengkapi web pengirim notifikasi sederhana menggunakan Golang.
 
 ## Identitas Mahasiswa
 
@@ -12,46 +12,53 @@ Aplikasi Firebase Auth & FCM Notification merupakan aplikasi mobile berbasis Flu
 
 ## Fitur Aplikasi
 
-1. **Login Firebase:** Halaman autentikasi login menggunakan Email dan Password melalui Firebase Authentication.
-2. **Auth Wrapper:** Deteksi status sesi pengguna secara real-time (`authStateChanges`) untuk mengarahkan ke Dashboard atau Login.
-3. **Dashboard User:** Menampilkan foto profil (`photoURL`), UID, nama, email, status verifikasi email, dan waktu terakhir login beserta tombol refresh profil.
-4. **FCM Token Card:** Menampilkan FCM Token perangkat dilengkapi tombol salin (*copy to clipboard*).
-5. **Push Notification (FCM):** Menerima notifikasi pada kondisi *foreground* (`flutter_local_notifications`), *background*, dan *terminated*, serta otomatis subscribe ke topic `kelas` dengan channel Android `high_importance_channel`.
-6. **Detail Notifikasi:** Menampilkan judul, isi pesan, dan seluruh data tambahan (`data` payload) ketika notifikasi diklik.
-7. **Logout:** Keluar dari akun Firebase dan kembali ke halaman Login.
+1. **Login & Logout:** Autentikasi akun menggunakan Email dan Password via Firebase Auth.
+2. **Dashboard User:** Menampilkan data profil user dan FCM Token yang bisa disalin.
+3. **Push Notification (FCM):** Menerima notifikasi saat aplikasi dibuka, di background, maupun ditutup, termasuk broadcast lewat topic `kelas`.
+4. **Detail Notifikasi:** Menampilkan judul, isi pesan, dan data tambahan saat notifikasi diklik.
+5. **Web FCM Sender (Golang):** Halaman web lokal untuk mengirim notifikasi ke satu device (token) atau semua device (topic).
 
 ## Teknologi
 
 - Flutter & Dart
-- Material Design 3
 - Firebase Authentication
 - Firebase Cloud Messaging (HTTP v1)
-- Flutter Local Notifications
-- Golang 1.22+ (Standard Library)
-- GitHub Actions (Auto-Build Debug APK)
+- Golang
 
 ## Arsitektur Sistem
 
 ```mermaid
 flowchart LR
-    Admin["Admin Web UI (127.0.0.1:8080)"]
-    Go["Backend Golang (fcmsender)"]
+    Admin["Web FCM Sender (127.0.0.1:8080)"]
+    Go["Backend Golang"]
     OAuth["Google OAuth 2.0"]
-    FCM["FCM HTTP v1 API (project-ondeva)"]
-    App["Flutter App (api_dart)"]
+    FCM["FCM HTTP v1 (project-ondeva)"]
+    App["Aplikasi Flutter"]
 
-    Admin -->|"POST / (target, title, body, data)"| Go
-    Go -->|"1. Sign JWT RS256"| OAuth
-    OAuth -->|"2. Access Token (Cache)"| Go
-    Go -->|"3. POST messages:send"| FCM
-    FCM -->|"4. Push Notification"| App
-    App -.->|"Salin FCM Token / Topic: kelas"| Admin
+    Admin -->|"POST /"| Go
+    Go -->|"JWT RS256"| OAuth
+    OAuth -->|"Access Token"| Go
+    Go -->|"Kirim pesan"| FCM
+    FCM -->|"Push Notification"| App
+    App -.->|"FCM Token / Topic: kelas"| Admin
 ```
 
-### Alur Pengiriman FCM HTTP v1
+## Screenshot Aplikasi
 
-- **Target:** Mendukung pengiriman ke satu perangkat (`token` dari `FcmTokenCard`) maupun broadcast ke banyak perangkat (`topic`, misalnya `kelas`).
-- **Payload:** Menyusun objek `notification` (`title`, `body`, dan `image` opsional), konfigurasi Android (`priority: "high"`, `channel_id: "high_importance_channel"`), serta data tambahan berformat `key=value` per baris yang ditampilkan pada `NotificationDetailScreen`.
+### 1. Login & Dashboard User
+
+<!-- Taruh screenshot Login / Dashboard User di sini -->
+![Login & Dashboard User](screenshots/dashboard.png)
+
+### 2. Web FCM Sender (Golang)
+
+<!-- Taruh screenshot halaman web FCM Sender di sini -->
+![Web FCM Sender](screenshots/fcm-sender.png)
+
+### 3. Notifikasi & Detail Notifikasi
+
+<!-- Taruh screenshot notifikasi masuk / halaman detail di sini -->
+![Detail Notifikasi](screenshots/notifikasi.png)
 
 ## Struktur Project
 
@@ -71,7 +78,8 @@ api_dart/
 ├── notification_sender/
 │   └── golang/
 │       ├── go.mod
-│       └── main.go
+│       ├── main.go
+│       └── index.html
 └── .github/
     └── workflows/
         └── build-apk.yml
@@ -79,7 +87,7 @@ api_dart/
 
 ## Cara Menjalankan Aplikasi
 
-Pastikan **Flutter SDK** dan **Go 1.22+** sudah terpasang.
+Pastikan Flutter SDK dan Go sudah terpasang.
 
 ### 1. Aplikasi Flutter
 
@@ -107,19 +115,22 @@ flutter pub get
 flutter run
 ```
 
-### 2. Setup Kredensial Backend Golang (OAuth 2.0)
+### 2. Backend Golang (FCM Sender)
 
-Backend Golang menggunakan autentikasi **OAuth 2.0 Service Account** (`RS256` JWT) untuk memperoleh *access token* Google secara otomatis dan menyimpannya di cache memori (`sync.Mutex`) hingga 60 detik sebelum kedaluwarsa.
-
-1. Buka **Firebase Console** → pilih project `project-ondeva` → **Project Settings** → **Service accounts** → klik **Generate new private key**.
-2. Simpan file hasil unduhan sebagai `service-account.json` di folder `notification_sender/golang/` *(atau di folder induknya `notification_sender/`)*.
-3. Untuk menguji pembacaan kredensial dan autentikasi OAuth 2.0:
+1. Unduh file service account dari Firebase Console (`Project Settings` → `Service accounts` → `Generate new private key`).
+2. Simpan file tersebut dengan nama `service-account.json` di folder `notification_sender/golang/`.
+3. Jalankan server:
 
 ```bash
 cd notification_sender/golang
 go run .
 ```
 
+4. Buka `http://127.0.0.1:8080` di browser.
+   - Pilih **Satu device** lalu tempel FCM Token dari aplikasi untuk kirim ke satu HP.
+   - Pilih **Topic** lalu isi `kelas` untuk kirim ke semua HP yang subscribe.
+   - Jika ingin mengganti port, gunakan environment variable `ADDR` (contoh: `$env:ADDR="127.0.0.1:9090"; go run .`).
+
 ## Catatan Keamanan
 
-- File `service-account.json` dan binary hasil build backend Golang sudah diproteksi di `.gitignore` agar tidak ikut ter-commit ke repository.
+- File `service-account.json` dan hasil build backend Golang sudah dimasukkan ke `.gitignore` supaya tidak ikut ter-commit ke GitHub.
