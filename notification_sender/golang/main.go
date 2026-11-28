@@ -1,6 +1,9 @@
 // Web Pengirim Notifikasi FCM (HTTP v1) - versi Golang
 // Hanya memakai standard library (tanpa package tambahan).
 //
+// Jalankan: go run .
+// Buka    : http://localhost:8080
+//
 // Syarat: file service-account.json (dari Firebase Console) ada di folder ini.
 package main
 
@@ -10,11 +13,13 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -31,6 +36,10 @@ const (
 	fcmScope           = "https://www.googleapis.com/auth/firebase.messaging"
 	channelID          = "high_importance_channel"
 )
+
+//go:embed index.html
+var indexHTML string
+var tmpl = template.Must(template.New("index").Parse(indexHTML))
 
 // ServiceAccount berisi field penting dari service-account.json
 type ServiceAccount struct {
@@ -198,13 +207,50 @@ func sendNotification(f Form) (*Result, error) {
 	return &Result{Status: resp.StatusCode, Payload: string(payload), Response: string(body)}, nil
 }
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	f := Form{
+		TargetType: "token",
+		Title:      "Halo Mahasiswa",
+		Body:       "Notifikasi dari web Golang",
+		Data:       "kategori=pengumuman\nid_pesan=001",
+	}
+	view := map[string]any{"Form": &f}
+
+	if r.Method == http.MethodPost {
+		_ = r.ParseForm()
+		f = Form{
+			TargetType: r.FormValue("target_type"),
+			Target:     r.FormValue("target"),
+			Title:      r.FormValue("title"),
+			Body:       r.FormValue("body"),
+			Image:      r.FormValue("image"),
+			Data:       r.FormValue("data"),
+		}
+		if f.TargetType != "token" && f.TargetType != "topic" {
+			f.TargetType = "token"
+		}
+		if res, err := sendNotification(f); err != nil {
+			view["Error"] = err.Error()
+		} else {
+			view["Result"] = res
+		}
+	}
+	if err := tmpl.Execute(w, view); err != nil {
+		log.Println("template error:", err)
+	}
+}
+
 func main() {
-	sa, err := loadServiceAccount()
-	if err != nil {
-		log.Fatal(err)
+	// Alamat bisa diganti lewat environment variable ADDR, contoh: ADDR=127.0.0.1:9090
+	addr := os.Getenv("ADDR")
+	if addr == "" {
+		addr = "127.0.0.1:8080"
 	}
-	if _, err := getAccessToken(sa); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Autentikasi OAuth 2.0 & pengirim FCM v1 siap untuk project %s", sa.ProjectID)
+	http.HandleFunc("/", handler)
+	log.Println("FCM Sender (Golang) berjalan di http://" + addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
